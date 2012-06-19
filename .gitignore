@@ -1,4 +1,5 @@
 *.py[co]
+.Python
 
 # Packages
 *.egg
@@ -8,6 +9,8 @@ build
 eggs
 parts
 bin
+include
+lib
 var
 sdist
 develop-eggs
