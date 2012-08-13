@@ -113,4 +113,5 @@ def get_tweet(username, n):
     return twitterAPI.home_timeline(count=n)[-1:][0] # Just the specified tweet.
 
 if __name__ == '__main__':
-    app.run()
+    port = int(environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
