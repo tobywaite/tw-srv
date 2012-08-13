@@ -10,10 +10,10 @@ TWITTER_NAME = 'tobywaite'
 YELP_NAME = 'ybot_yelp' # Name of the twitter acct aggragating yelp checkins
 
 # Twitter auth info & setup
-T_CONSUMER_KEY = environ['TWITTER_CONSUMER_KEY']
-T_CONSUMER_SECRET = environ['TWITTER_CONSUMER_SECRET']
-T_ACCESS_TOKEN = environ['TWITTER_ACCESS_TOKEN']
-T_ACCESS_SECRET = environ['TWITTER_ACCESS_SECRET']
+T_CONSUMER_KEY = environ.get('TWITTER_CONSUMER_KEY')
+T_CONSUMER_SECRET = environ.get('TWITTER_CONSUMER_SECRET')
+T_ACCESS_TOKEN = environ.get('TWITTER_ACCESS_TOKEN')
+T_ACCESS_SECRET = environ.get('TWITTER_ACCESS_SECRET')
 
 twitter_auth = tweepy.OAuthHandler(T_CONSUMER_KEY, T_CONSUMER_SECRET)
 twitter_auth.set_access_token(T_ACCESS_TOKEN, T_ACCESS_SECRET)
@@ -25,26 +25,28 @@ twitterAPI = tweepy.API(twitter_auth)
 def blog():
     """Returns the first several blog/project posts"""
     return jsonify(
-        [
-            {
-                'title': 'A blog post about things',
-                'date': '7/3/12',
-                'id': 1,
-                'lead': "once upon a time, there was a cool dude who did cool \
-                things. This is his story.",
-                'body': "More content for the blog post",
-                'more_url': 'http://blog.tobywaite.net',
-            },
-            {
-                'title': 'Cool projects, ftw',
-                'date': '6/3/12',
-                'id': 2,
-                'lead': "I did a really cool project once, this is all about \
-                it.",
-                'body': "More content for the blog post",
-                'more_url': 'http://blog.tobywaite.net',
-            },
-        ]
+        {
+            'entries': [
+                {
+                    'title': 'A blog post about things',
+                    'date': '7/3/12',
+                    'id': 1,
+                    'lead': "once upon a time, there was a cool dude who did cool \
+                    things. This is his story.",
+                    'body': "More content for the blog post",
+                    'more_url': 'http://blog.tobywaite.net',
+                },
+                {
+                    'title': 'Cool projects, ftw',
+                    'date': '6/3/12',
+                    'id': 2,
+                    'lead': "I did a really cool project once, this is all about \
+                    it.",
+                    'body': "More content for the blog post",
+                    'more_url': 'http://blog.tobywaite.net',
+                },
+            ]
+        }
     )
 
 @app.route('/twitter')
@@ -114,4 +116,5 @@ def get_tweet(username, n):
 
 if __name__ == '__main__':
     port = int(environ.get('PORT', 5000))
+    app.debug = True
     app.run(host='0.0.0.0', port=port)
