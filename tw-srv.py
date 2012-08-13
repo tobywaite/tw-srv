@@ -1,9 +1,25 @@
-from flask import Flask, jsonify
 from os import environ
+
+from flask import Flask, jsonify
+import tweepy
 
 app = Flask(__name__)
 
-# Blog
+# Account User Names
+TWITTER_NAME = 'tobywaite'
+YELP_NAME = 'ybot_yelp' # Name of the twitter acct aggragating yelp checkins
+
+# Twitter auth info & setup
+T_CONSUMER_KEY = environ['TWITTER_CONSUMER_KEY']
+T_CONSUMER_SECRET = environ['TWITTER_CONSUMER_SECRET']
+T_ACCESS_TOKEN = environ['TWITTER_ACCESS_TOKEN']
+T_ACCESS_SECRET = environ['TWITTER_ACCESS_SECRET']
+
+twitter_auth = tweepy.OAuthHandler(T_CONSUMER_KEY, T_CONSUMER_SECRET)
+twitter_auth.set_access_token(T_ACCESS_TOKEN, T_ACCESS_SECRET)
+
+twitterAPI = tweepy.API(twitter_auth)
+
 
 @app.route('/blog')
 def blog():
@@ -31,104 +47,70 @@ def blog():
         ]
     )
 
-# Twitter
+@app.route('/twitter')
+@app.route('/twitter/<n>')
+def twitter(n=1):
+    """Returns a tweet from my timeline"""
+    tweet = get_tweet(TWITTER_NAME, n)
+    tweet_info = {
+           'text': tweet.text,
+           'date': tweet.created_at.strftime('%A, %B %d'),
+           'time': tweet.created_at.strftime('%H:%M'),
+           'latest': (int(n) == 1), # True if n is one, else False.
+        }
+    return jsonify(tweet_info)
 
-import tweepy
+@app.route('/yelp')
+@app.route('/yelp/<n>')
+def yelp(n=1):
+    """Return yelp activity from my checkin stream"""
+    tweet = get_tweet(YELP_NAME, n) # Yelp checkin info is aggregated to twitter.
+    yelp_info = {
+        'biz-name': parse_yelp_name(tweet.text),
+        'biz-uri': parse_yelp_uri(tweet.text),
+        'location': 'San Francisco, CA',
+        'date': tweet.created_at.strftime('%A, %B %d'),
+        'time': tweet.created_at.strftime('%H:%M'),
+        'tip': "",
+    }
+    return jsonify(yelp_info)
 
-t_consumer_key = environ['TWITTER_CONSUMER_KEY']
-t_consumer_secret = environ['TWITTER_CONSUMER_SECRET']
-t_access_token = environ['TWITTER_ACCESS_TOKEN']
-t_access_secret = environ['TWITTER_ACCESS_SECRET']
-
-twitter_auth = tweepy.OAuthHandler(t_consumer_key, t_consumer_secret)
-twitter_auth.set_access_token(t_access_token, t_access_secret)
-
-twitter = tweepy.API(twitter_auth)
-
-@app.route('/tweets/<username>')
-def tweets(username):
-    """Returns the most recent tweet from a twitter user's timeline"""
-    return get_tweets(username, n=1)
-
-@app.route('/tweets/<username>/<n>')
-def get_tweets(username, n):
-    """Returns the n'th tweet from a users twitter timeline"""
-    return twitter.home_timeline(count=1)
-    #return jsonify(
-    #    {
-    #        'tweet': 'This is my tweet!',
-            #'date': '6/15/12',
-        #}
-    #)
-
-# Github
-
-@app.route('/github/<username>/')
-def github(username):
-    """Returns the most recent commit from a user"""
-    return github_activity(username, activity_type='commit', n=1)
-
-@app.route('/github/<username>/<activity>/<n>')
-def github_activity(username, activity):
-    """Returns the n'th most recent of a given activity for a given user's
-    github account
+def parse_yelp_name(text):
+    """Tweets are in the following form:
+        'I checked in at Tilden Regional Park on #Yelp http://bit.ly/td3IN5'
+    This function pulls the "Tilden Regional Park" out of the text.
     """
-    return jsonify({'commit': 'my commit messages are so dumb'})
+    end_index = text.find('on #Yelp')
+    start_index = len('I check in at ')
+    return text[start_index:end_index]
 
-# Last.fm
+def parse_yelp_uri(text):
+    """Tweets are in the following form:
+        'I checked in at Tilden Regional Park on #Yelp http://bit.ly/td3IN5'
+    This function pulls the "http://bit.ly/td3IN5" out of the text.
+    """
+    start_index = text.find('http://bit.ly/')
+    return text[start_index:]
 
-@app.route('/lastfm/<username>')
-def lastfm(username):
-    """Return the most recent track played by a given last.fm user"""
-    return lastfm_activity(username, n=1)
+def parse_biz_uri(text):
+    pass
 
-@app.route('/lastfm/<username>/<n>')
-def lastfm_activity(username, n):
-    """Return the n'th most recent track played by a given last.fm user"""
-    return jsonify(
-        {
-            'artist': 'Beach House',
-            'album': 'Bloom',
-            'song': 'A song',
-            'album_art': 'http://www.google.com',
-        }
-    )
+def get_tweet(username, n):
+    """Returns the n'th tweet from a users twitter timeline
 
-# Flickr
+    This is an ugly hack. The twitter API doesn't allow you to naievly get
+    the "nth" tweet. Instead, we get the first "n" tweets and return the last
+    one returned.
 
-@app.route('/flickr/<username>')
-def flickr(username):
-    """Return the most recent track played by a given last.fm user"""
-    return lastfm_activity(username, n=1)
+    Args:
+    - username: the username of the account to fetch the tweet for.
+    - n: the number of the tweet to get on their time line. n=1 indicates the
+       most recent tweet, n=10 indicates the 10th most recent, etc.
 
-@app.route('/lastfm/<username>/<album>/<n>')
-def flickr_photo(username, album, n):
-    """Return the n'th photo from a specified album belonging to a flickr user"""
-    return jsonify(
-        {
-            'title': 'A picture',
-            'url': 'http://www.flickr.com',
-            'size': {'width': 300, 'height': 200},
-            'desc': 'This is a picture of a thing',
-        }
-    )
-
-# Yelp
-
-@app.route('/yelp/<username>')
-def yelp(username):
-    return yelp_checkin(username, n=1)
-
-@app.route('/yelp/<username>/<n>')
-def yelp_checkin(username, n):
-    return jsonify(
-        {
-            'location': "Ike's Place",
-            'date': '12/3/12',
-            'tip': 'This place makes sandwiches.',
-        }
-    )
+    Returns:
+    - A tweepy Status object
+    """
+    return twitterAPI.home_timeline(count=n)[-1:][0] # Just the specified tweet.
 
 if __name__ == '__main__':
-    app.debug = True
     app.run()
