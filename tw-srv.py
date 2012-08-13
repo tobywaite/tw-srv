@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 # Account User Names
 TWITTER_NAME = 'tobywaite'
-YELP_NAME = 'ybot_yelp' # Name of the twitter acct aggragating yelp checkins
+YELP_NAME = 'ybot_yelp'  # Name of the twitter acct aggragating yelp checkins
 
 # Twitter auth info & setup
 T_CONSUMER_KEY = environ.get('TWITTER_CONSUMER_KEY')
@@ -31,8 +31,8 @@ def blog():
                     'title': 'A blog post about things',
                     'date': '7/3/12',
                     'id': 1,
-                    'lead': "once upon a time, there was a cool dude who did cool \
-                    things. This is his story.",
+                    'lead': """once upon a time, there was a cool dude who did
+                        cool things. This is his story.""",
                     'body': "More content for the blog post",
                     'more_url': 'http://blog.tobywaite.net',
                 },
@@ -40,8 +40,8 @@ def blog():
                     'title': 'Cool projects, ftw',
                     'date': '6/3/12',
                     'id': 2,
-                    'lead': "I did a really cool project once, this is all about \
-                    it.",
+                    'lead': """I did a really cool project once, this is all
+                        about it.""",
                     'body': "More content for the blog post",
                     'more_url': 'http://blog.tobywaite.net',
                 },
@@ -49,24 +49,26 @@ def blog():
         }
     )
 
+
 @app.route('/twitter')
 @app.route('/twitter/<n>')
 def twitter(n=1):
     """Returns a tweet from my timeline"""
     tweet = get_tweet(TWITTER_NAME, n)
     tweet_info = {
-           'text': tweet.text,
-           'date': tweet.created_at.strftime('%A, %B %d'),
-           'time': tweet.created_at.strftime('%H:%M'),
-           'latest': (int(n) == 1), # True if n is one, else False.
-        }
+        'text': tweet.text,
+        'date': tweet.created_at.strftime('%A, %B %d'),
+        'time': tweet.created_at.strftime('%H:%M'),
+        'latest': (int(n) == 1),  # True if n is one, else False.
+    }
     return jsonify(tweet_info)
+
 
 @app.route('/yelp')
 @app.route('/yelp/<n>')
 def yelp(n=1):
     """Return yelp activity from my checkin stream"""
-    tweet = get_tweet(YELP_NAME, n) # Yelp checkin info is aggregated to twitter.
+    tweet = get_tweet(YELP_NAME, n)  # Yelp checkin info aggregated to twitter.
     yelp_info = {
         'biz-name': parse_yelp_name(tweet.text),
         'biz-uri': parse_yelp_uri(tweet.text),
@@ -77,6 +79,7 @@ def yelp(n=1):
     }
     return jsonify(yelp_info)
 
+
 def parse_yelp_name(text):
     """Tweets are in the following form:
         'I checked in at Tilden Regional Park on #Yelp http://bit.ly/td3IN5'
@@ -86,6 +89,7 @@ def parse_yelp_name(text):
     start_index = len('I check in at ')
     return text[start_index:end_index]
 
+
 def parse_yelp_uri(text):
     """Tweets are in the following form:
         'I checked in at Tilden Regional Park on #Yelp http://bit.ly/td3IN5'
@@ -94,8 +98,6 @@ def parse_yelp_uri(text):
     start_index = text.find('http://bit.ly/')
     return text[start_index:]
 
-def parse_biz_uri(text):
-    pass
 
 def get_tweet(username, n):
     """Returns the n'th tweet from a users twitter timeline
@@ -112,7 +114,7 @@ def get_tweet(username, n):
     Returns:
     - A tweepy Status object
     """
-    return twitterAPI.home_timeline(count=n)[-1:][0] # Just the specified tweet.
+    return twitterAPI.home_timeline(count=n)[-1:][0]  # return specified tweet
 
 if __name__ == '__main__':
     port = int(environ.get('PORT', 5000))
