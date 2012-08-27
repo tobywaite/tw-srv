@@ -21,6 +21,12 @@ twitter_auth.set_access_token(T_ACCESS_TOKEN, T_ACCESS_SECRET)
 twitterAPI = tweepy.API(twitter_auth)
 
 
+@app.after_request
+def allow_cors(response):
+    """ Modify the headers to allow cross-origin requests."""
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
 @app.route('/blog')
 def blog():
     """Returns the first several blog/project posts"""
